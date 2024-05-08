@@ -3,6 +3,7 @@ import type { Knex } from 'knex';
 import { metrics, retry } from '@nangohq/utils';
 import type { Pool } from 'tarn';
 
+const defaultSchema = process.env['NANGO_DB_SCHEMA'] || 'nango';
 export function getDbConfig({ timeoutMs }: { timeoutMs: number }): Knex.Config {
     return {
         client: process.env['NANGO_DB_CLIENT'] || 'pg',
@@ -20,7 +21,7 @@ export function getDbConfig({ timeoutMs }: { timeoutMs: number }): Knex.Config {
             max: parseInt(process.env['NANGO_DB_POOL_MAX'] || '50')
         },
         // SearchPath needs the current db and public because extension can only be installed once per DB
-        searchPath: ['nango', 'public']
+        searchPath: [defaultSchema, 'public']
     };
 }
 
@@ -76,7 +77,7 @@ export class KnexDatabase {
     }
 
     schema() {
-        return 'nango';
+        return defaultSchema;
     }
 }
 
