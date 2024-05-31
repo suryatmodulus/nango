@@ -151,7 +151,7 @@ class ProxyController {
                 throw new NangoError('unknown_provider_config');
             }
 
-            if (activityLogId) {
+            if (activityLogId && !existingActivityLogId) {
                 await updateProviderActivityLog(activityLogId, providerConfig.provider);
                 await logCtx.enrichOperation({
                     integrationId: providerConfig.id!,
