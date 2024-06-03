@@ -1,5 +1,4 @@
 import type { AxiosError, AxiosResponse, AxiosRequestConfig, ParamsSerializerOptions } from 'axios';
-import axios from 'axios';
 import { backOff } from 'exponential-backoff';
 import FormData from 'form-data';
 import type { ApiKeyCredentials, BasicApiCredentials } from '../models/Auth.js';
@@ -13,6 +12,7 @@ import { NangoError } from '../utils/error.js';
 import type { ActivityLogMessage } from '../models/Activity.js';
 import type { Template as ProviderTemplate } from '../models/Provider.js';
 import { getLogger } from '@nangohq/utils';
+import { axiosInstance as axios } from '../utils/axios.js';
 
 const logger = getLogger('Proxy');
 

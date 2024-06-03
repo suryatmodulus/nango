@@ -7,7 +7,6 @@ import type { UrlWithParsedQuery } from 'url';
 import url from 'url';
 import querystring from 'querystring';
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import axios from 'axios';
 import { backOff } from 'exponential-backoff';
 import type {
     ActivityLogMessage,
@@ -19,6 +18,7 @@ import type {
     ApplicationConstructedProxyConfiguration
 } from '@nangohq/shared';
 import {
+    axiosInstance as axios,
     NangoError,
     updateProvider as updateProviderActivityLog,
     updateEndpoint as updateEndpointActivityLog,
@@ -33,6 +33,7 @@ import {
     connectionService,
     configService
 } from '@nangohq/shared';
+
 import { metrics, getLogger } from '@nangohq/utils';
 import { logContextGetter, oldLevelToNewLevel } from '@nangohq/logs';
 import type { LogContext } from '@nangohq/logs';

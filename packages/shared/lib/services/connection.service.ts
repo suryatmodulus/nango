@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 import type { Knex } from '@nangohq/database';
-import axios from 'axios';
 import db, { schema, dbNamespace } from '@nangohq/database';
 import analytics, { AnalyticsTypes } from '../utils/analytics.js';
+import { axiosInstance as axios } from '../utils/axios.js';
 import type {
     TemplateOAuth2 as ProviderTemplateOAuth2,
     Template as ProviderTemplate,
