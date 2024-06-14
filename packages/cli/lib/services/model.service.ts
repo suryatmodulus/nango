@@ -154,10 +154,6 @@ export function fieldToTypescript({ field }: { field: NangoModelField }): string
     return `${field.value}${field.array ? '[]' : ''}`;
 }
 
-interface TmpInte {
-    name: string;
-    syncs: { input: string; output: Record<string, string> }[];
-}
 /**
  * Generate SDK types
  */
@@ -165,26 +161,16 @@ export function generateSDKTypes({ parsed }: { parsed: NangoYamlParsed }) {
     const typesContent = fs.readFileSync(`${getNangoRootPath()}/../shared/dist/sdk/sync.d.ts`, 'utf8');
 
     let syncModelsByName: string = '';
-    const syncModelsByIntegration: TmpInte[] = [];
-    const test: string[] = [];
+    const byIntegrations: string[] = [];
     for (const integration of parsed.integrations) {
-        const obj: TmpInte = {
-            name: integration.providerConfigKey,
-            syncs: []
-        };
-        test.push(`'${integration.providerConfigKey}': {`);
+        byIntegrations.push(`'${integration.providerConfigKey}': {`);
+
+        byIntegrations.push(`syncs: {`);
         for (const sync of integration.syncs) {
-            test.push(`'${sync.name}': {`);
-            const tmp: TmpInte['syncs'][0] = {
-                input: 'never',
-                output: {}
-            };
-            if (sync.input) {
-                tmp['input'] = sync.input;
-            }
-            test.push(`input: ${sync.input || 'never'}`);
+            byIntegrations.push(`'${sync.name}': {`);
+            byIntegrations.push(`input: ${sync.input || 'never'}`);
             if (sync.output) {
-                test.push(`output: {`);
+                byIntegrations.push(`output: {`);
                 for (const output of sync.output) {
                     const model = parsed.models.get(output);
                     if (!model || model.isAnon) {
@@ -192,32 +178,61 @@ export function generateSDKTypes({ parsed }: { parsed: NangoYamlParsed }) {
                     }
 
                     syncModelsByName += `  '${model.name}': ${model.name};\n`;
-                    tmp['output'][model.name] = model.name;
-                    test.push(`${model.name}: ${model.name}`);
+                    byIntegrations.push(`${model.name}: ${model.name}`);
                 }
-                test.push(`}`);
+                byIntegrations.push(`}`);
             } else {
-                test.push(`output: Record<string, never>`);
+                byIntegrations.push(`output: Record<string, never>`);
             }
-            obj['syncs'].push(tmp);
-            test.push(`}`);
+            byIntegrations.push(`}`);
         }
-        test.push(`}`);
+        byIntegrations.push(`}`);
 
-        syncModelsByIntegration.push(obj);
+        byIntegrations.push(`actions: {`);
+        for (const action of integration.actions) {
+            byIntegrations.push(`'${action.name}': {`);
+            byIntegrations.push(`input: ${action.input || 'never'}`);
+            if (action.output) {
+                byIntegrations.push(`output: {`);
+                for (const output of action.output) {
+                    const model = parsed.models.get(output);
+                    if (!model || model.isAnon) {
+                        continue;
+                    }
+
+                    syncModelsByName += `  '${model.name}': ${model.name};\n`;
+                    byIntegrations.push(`${model.name}: ${model.name}`);
+                }
+                byIntegrations.push(`}`);
+            } else {
+                byIntegrations.push(`output: Record<string, never>`);
+            }
+            byIntegrations.push(`}`);
+        }
+        byIntegrations.push(`}`);
+        byIntegrations.push(`}`);
     }
 
     return `
 ${typesContent.replaceAll('NangoAction', 'NangoActionBase').replaceAll('NangoSync', 'NangoSyncBase')}
-export type NangoAction = NangoActionBase;
-export type NangoSync = NangoSyncBase<SyncModelsByName>;
 
 export type SyncModelsByName = {
 ${syncModelsByName}
 };
-export type SyncModelsByIntegration = {
-${test.join('\n')}
+export type ModelsByIntegration = {
+${byIntegrations.join('\n')}
 };
-export type Sync = (nango: NangoSync)=> Promise<void>;
+export type IntegrationsNames = keyof ModelsByIntegration;
+
+export type NangoAction = NangoActionBase;
+export type NangoSync<
+    TIntegration extends IntegrationsNames,
+    TSyncName extends keyof ModelsByIntegration[TIntegration]["syncs"],
+> = NangoSyncBase<ModelsByIntegration[TIntegration]["syncs"][TSyncName]>;
+
+export type Sync<
+    TIntegration extends IntegrationsNames,
+    TSyncName extends keyof ModelsByIntegration[TIntegration]["syncs"],
+> = (nango: NangoSync<TIntegration, TSyncName>) => Promise<void>;
 `;
 }
