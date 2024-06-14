@@ -717,7 +717,7 @@ export class NangoAction {
     }
 }
 
-export class NangoSync extends NangoAction {
+export class NangoSync<TModels extends Record<string, any> = Record<string, any>> extends NangoAction {
     lastSyncDate?: Date;
     track_deletes = false;
     logMessages?: { counts: { updated: number; added: number; deleted: number }; messages: unknown[] } | undefined = {
@@ -754,6 +754,16 @@ export class NangoSync extends NangoAction {
     public async batchSend<T = any>(results: T[], model: string): Promise<boolean | null> {
         logger.warn('batchSend will be deprecated in future versions. Please use batchSave instead.');
         return this.batchSave(results, model);
+    }
+
+    public async saveRecords<TModelName extends keyof TModels>(modelName: TModelName, records: TModels[TModelName][]): Promise<boolean | null> {
+        return await this.batchSave(records, modelName as string);
+    }
+    public async deleteRecords<TModelName extends keyof TModels>(modelName: TModelName, records: TModels[TModelName][]): Promise<boolean | null> {
+        return await this.batchDelete(records, modelName as string);
+    }
+    public async updateRecords<TModelName extends keyof TModels>(modelName: TModelName, records: TModels[TModelName][]): Promise<boolean | null> {
+        return await this.batchUpdate(records, modelName as string);
     }
 
     public async batchSave<T = any>(results: T[], model: string): Promise<boolean | null> {
