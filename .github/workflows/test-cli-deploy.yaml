@@ -2,7 +2,7 @@ name: Deploy Nango Integrations
 'on':
     push:
         branches:
-            - tbonnin/test-cli-github-action
+            - main
         workflow_dispatch:
             inputs:
                 stage:
@@ -25,18 +25,19 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
-            # - name: Check if NANGO_DEV_SECRET_KEY is set
-            #   run: |
-            #       if [ -z "${{ secrets.NANGO_DEV_SECRET_KEY }}" ]; then
-            #         echo "Error: NANGO_DEV_SECRET_KEY secret is not set"
-            #         exit 1
-            #       fi
+            - name: Check if NANGO_DEV_SECRET_KEY is set
+              run: |
+                  if [ -z "${{ secrets.NANGO_DEV_SECRET_KEY }}" ]; then
+                    echo "Error: NANGO_DEV_SECRET_KEY secret is not set"
+                    exit 1
+                  fi
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
             - name: Install Nango CLI
-              run: npm install nango@0.40.9 -g
+              run: npm install nango -g
             - name: run Nango deploy
               run: |
+                  cd nango-integrations
                   if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
                       stage="${{ inputs.stage }}"
                   elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
@@ -44,7 +45,4 @@ jobs:
                   else
                       stage="dev"
                   fi
-                  mkdir nango-integrations && cd nango-integrations
-                  printenv
-                  echo $CI
-                  nango deploy "$stage" ${{ inputs.allowDestructive == 'true' && '--allow-destructive' || '' }}
+                  nango deploy "$stage" --auto-confirm ${{ inputs.allowDestructive == 'true' && '--allow-destructive' || '' }}
